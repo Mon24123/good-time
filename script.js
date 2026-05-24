@@ -2,7 +2,7 @@ const STORAGE_KEY = "focus-widget:v1";
 const DEFAULT_TASKS = ["阅读/学习", "项目推进", "运动", "整理记录", "每日复盘"];
 const DEFAULT_CATEGORIES = ["工作", "学习", "项目", "生活", "健康", "其他"];
 const DEFAULT_THEME_COLOR = "#6c5ce7";
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.2.0";
 const CATEGORY_HUE_OFFSETS = [0, 42, 318, 198, 82, 142, 274, 24, 226, 302, 118, 176, 16, 250];
 
 const $ = (selector) => document.querySelector(selector);
@@ -1817,6 +1817,11 @@ function renderCategoryStats(day) {
       </div>
       <div id="categoryInsight" class="category-insight">${renderCategoryIdleInsight()}</div>
     </div>
+    <div class="category-export-row" aria-label="复制分类表格">
+      <button type="button" data-category-export="日">复制日表</button>
+      <button type="button" data-category-export="周">复制周表</button>
+      <button type="button" data-category-export="月">复制月表</button>
+    </div>
     <div id="categoryDetail" class="category-detail" aria-live="polite"></div>
   `;
   if (selectedCategoryDetailPeriod) {
@@ -1936,17 +1941,17 @@ function getPeriodRangeText(periodLabel) {
 function buildCategoryDetailTable(periodLabel) {
   const totals = getCategoryTotalsByPeriodLabel(periodLabel);
   const rangeText = getPeriodRangeText(periodLabel);
-  const rows = [["周期", "日期范围", "分类", "事项", "分钟", "时长"]];
+  const rows = [["周期", "日期范围", "日期", "分类", "事件", "备注", "分钟", "时长"]];
 
   totals.forEach((categoryTotal) => {
     const tasks = getTaskTotalsForCategoryPeriod(periodLabel, categoryTotal.name);
     if (!tasks.length) {
-      rows.push([periodLabel, rangeText, categoryTotal.name, "", String(Math.round(categoryTotal.ms / 60000)), formatDuration(categoryTotal.ms)]);
+      rows.push([periodLabel, rangeText, "", categoryTotal.name, "", "", String(Math.round(categoryTotal.ms / 60000)), formatDuration(categoryTotal.ms)]);
       return;
     }
 
     tasks.forEach((task) => {
-      rows.push([periodLabel, rangeText, categoryTotal.name, task.title, String(Math.round(task.ms / 60000)), formatDuration(task.ms)]);
+      rows.push([periodLabel, rangeText, task.date || "", categoryTotal.name, task.title, task.note || "", String(Math.round(task.ms / 60000)), formatDuration(task.ms)]);
     });
   });
 
@@ -1991,31 +1996,26 @@ function getTaskTotalsForCategoryPeriod(periodLabel, category) {
       if ((record.category || "其他") !== category) {
         return;
       }
-      const taskKey = periodLabel === "日"
-        ? record.taskId || normalizeTaskTitle(record.title)
-        : `${key}::${record.taskId || normalizeTaskTitle(record.title)}`;
-      const title = periodLabel === "日"
-        ? record.title
-        : `${formatPeriodTaskDate(key, periodLabel)} · ${record.title}`;
-      const existing = totals.get(taskKey) || { title, ms: 0 };
+      const taskKey = `${key}::${record.taskId || normalizeTaskTitle(record.title)}`;
+      const existing = totals.get(taskKey) || { date: key, title: record.title, ms: 0, notes: [] };
       existing.ms += record.durationMs;
+      if (record.note) {
+        existing.notes.push(record.note);
+      }
       totals.set(taskKey, existing);
     });
 
     if (day.active && (day.active.category || "其他") === category) {
-      const taskKey = periodLabel === "日"
-        ? day.active.taskId || normalizeTaskTitle(day.active.title)
-        : `${key}::${day.active.taskId || normalizeTaskTitle(day.active.title)}`;
-      const title = periodLabel === "日"
-        ? day.active.title
-        : `${formatPeriodTaskDate(key, periodLabel)} · ${day.active.title}`;
-      const existing = totals.get(taskKey) || { title, ms: 0 };
+      const taskKey = `${key}::${day.active.taskId || normalizeTaskTitle(day.active.title)}`;
+      const existing = totals.get(taskKey) || { date: key, title: day.active.title, ms: 0, notes: [] };
       existing.ms += getActiveElapsed(day.active);
       totals.set(taskKey, existing);
     }
   });
 
-  return [...totals.values()].sort((a, b) => b.ms - a.ms);
+  return [...totals.values()]
+    .map((item) => ({ ...item, note: [...new Set(item.notes || [])].join("；") }))
+    .sort((a, b) => b.ms - a.ms);
 }
 
 function formatPeriodTaskDate(key, periodLabel) {
@@ -2575,6 +2575,38 @@ elements.taskList.addEventListener("click", (event) => {
   }
 });
 
+function positionRecordHoverCard(segment) {
+  const card = segment?.querySelector(".record-hover-card");
+  if (!card) {
+    return;
+  }
+
+  const rect = segment.getBoundingClientRect();
+  const width = Math.min(360, Math.max(260, window.innerWidth - 32));
+  const estimatedHeight = 210;
+  const left = Math.min(Math.max(16, rect.left), window.innerWidth - width - 16);
+  let top = rect.bottom + 8;
+  if (top + estimatedHeight > window.innerHeight - 16) {
+    top = Math.max(16, rect.top - estimatedHeight - 8);
+  }
+
+  card.style.setProperty("--hover-card-left", `${Math.round(left)}px`);
+  card.style.setProperty("--hover-card-top", `${Math.round(top)}px`);
+}
+
+elements.recordList.addEventListener("pointerover", (event) => {
+  const segment = event.target.closest(".record-segment");
+  if (segment) {
+    positionRecordHoverCard(segment);
+  }
+});
+
+elements.recordList.addEventListener("focusin", (event) => {
+  const segment = event.target.closest(".record-segment");
+  if (segment) {
+    positionRecordHoverCard(segment);
+  }
+});
 elements.recordList.addEventListener("click", (event) => {
   const titleEditButton = event.target.closest("[data-record-title-edit]");
   if (titleEditButton) {

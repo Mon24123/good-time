@@ -138,13 +138,15 @@ select:focus {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-self: stretch;
 }
 
-.version-label {
-  min-height: 30px;
+.version-label,
+.contact-label {
+  min-height: 26px;
   padding: 0 9px;
   display: inline-grid;
   place-items: center;
@@ -152,9 +154,21 @@ select:focus {
   border-radius: 999px;
   color: var(--muted);
   background: rgba(255, 255, 255, 0.62);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 780;
   font-variant-numeric: tabular-nums;
+}
+
+.product-meta {
+  flex: 1 0 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.contact-label {
+  color: var(--accent-dark);
 }
 
 .backup-actions {
@@ -224,6 +238,7 @@ select:focus {
 
 .eyebrow {
   margin: 0 0 7px;
+  white-space: nowrap;
   color: var(--accent);
   font-size: 0.74rem;
   font-weight: 800;
@@ -239,6 +254,7 @@ h2 {
 
 h1 {
   font-size: 1.42rem;
+  white-space: nowrap;
 }
 
 .date-picker {
@@ -579,6 +595,7 @@ body.has-active-task .active-progress span {
 }
 
 .finish-note {
+  min-height: 112px;
   margin-top: 10px;
 }
 
@@ -910,10 +927,10 @@ body.compact-mode .compact-only:hover {
 .record-segment::before {
   content: "";
   position: absolute;
-  left: 100%;
-  top: -10px;
-  bottom: -10px;
-  width: 14px;
+  left: -10px;
+  right: -10px;
+  top: 100%;
+  height: 12px;
 }
 
 .record-segment-time {
@@ -932,15 +949,15 @@ body.compact-mode .compact-only:hover {
 }
 
 .record-hover-card {
-  position: absolute;
-  left: calc(100% + 6px);
-  top: 50%;
-  z-index: 32;
-  width: min(320px, calc(100vw - 60px));
+  position: fixed;
+  left: var(--hover-card-left, 16px);
+  top: var(--hover-card-top, 16px);
+  z-index: 120;
+  width: min(360px, calc(100vw - 32px));
   display: grid;
   gap: 8px;
   padding: 10px;
-  transform: translateY(-50%);
+  transform: none;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -1372,6 +1389,30 @@ body.compact-mode .compact-only:hover {
   letter-spacing: 0.08em;
 }
 
+
+.category-export-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-export-row button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 999px;
+  color: var(--accent-dark);
+  background: color-mix(in srgb, var(--accent) 7%, white);
+  font-size: 0.78rem;
+  font-weight: 780;
+  cursor: pointer;
+}
+
+.category-export-row button:hover {
+  color: #fff;
+  background: var(--accent);
+}
+
 .category-detail {
   display: grid;
   gap: 10px;
@@ -1568,6 +1609,18 @@ body.compact-mode .compact-only {
 
 body.compact-mode .widget-header {
   padding: 16px 18px;
+}
+
+body.compact-mode h1 {
+  font-size: 1.34rem;
+}
+
+body.compact-mode .eyebrow {
+  font-size: 0.68rem;
+}
+
+body.compact-mode .finish-note {
+  min-height: 136px;
 }
 
 body.compact-mode .date-nav {
