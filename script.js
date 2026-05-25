@@ -2,7 +2,7 @@ const STORAGE_KEY = "focus-widget:v1";
 const DEFAULT_TASKS = ["阅读/学习", "项目推进", "运动", "整理记录", "每日复盘"];
 const DEFAULT_CATEGORIES = ["工作", "学习", "项目", "生活", "健康", "其他"];
 const DEFAULT_THEME_COLOR = "#6c5ce7";
-const APP_VERSION = "0.2.1";
+const APP_VERSION = "0.2.2";
 const CATEGORY_HUE_OFFSETS = [0, 42, 318, 198, 82, 142, 274, 24, 226, 302, 118, 176, 16, 250];
 
 const $ = (selector) => document.querySelector(selector);
@@ -1918,9 +1918,14 @@ function updateCategoryInsight(segment) {
 
 function renderCategoryIdleInsight() {
   return `
-    <span class="insight-eyebrow">悬停查看</span>
-    <strong>悬停看任务</strong>
-    <span>日 / 周 / 月都会显示该分类下的任务累计时间</span>
+    <span class="insight-eyebrow">查看明细</span>
+    <strong>选择分类查看任务</strong>
+    <span>日 / 周 / 月都会显示该分类下的任务累计时间，也可以导出给表格继续整理</span>
+    <div class="insight-actions" aria-label="导出分类 CSV">
+      <button type="button" data-category-csv="日">导出日 CSV</button>
+      <button type="button" data-category-csv="周">导出周 CSV</button>
+      <button type="button" data-category-csv="月">导出月 CSV</button>
+    </div>
   `;
 }
 
@@ -2900,7 +2905,10 @@ elements.categoryStats.addEventListener("pointerleave", () => {
   resetCategoryInsight();
 });
 
-elements.categoryStats.addEventListener("pointerup", () => {
+elements.categoryStats.addEventListener("pointerup", (event) => {
+  if (event.target.closest(".category-insight")) {
+    return;
+  }
   resetCategoryInsight();
 });
 
