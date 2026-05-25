@@ -1,13 +1,13 @@
 {
-  "name": "focus-widget",
+  "name": "good-time",
   "version": "0.2.2",
   "private": true,
-  "description": "A tiny desktop focus timer and daily task widget.",
+  "description": "Good Time, a tiny desktop time tracker and daily task widget.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package:mac": "electron-packager . 好时光 --platform=darwin --arch=arm64 --out=dist --overwrite --asar=false --ignore=\"^/dist($|/)\" --ignore=\"^/openclaw-workspace($|/)\" && node scripts/apply-app-icon.js mac",
-    "package:win": "electron-packager . 好时光 --platform=win32 --arch=x64 --out=dist --overwrite --asar=false --icon=assets/icon.ico --ignore=\"^/dist($|/)\" --ignore=\"^/openclaw-workspace($|/)\""
+    "package:mac": "electron-packager . \"Good Time\" --platform=darwin --arch=arm64 --out=dist --overwrite --asar=false --ignore=\"^/dist($|/)\" --ignore=\"^/openclaw-workspace($|/)\" && node scripts/apply-app-icon.js mac",
+    "package:win": "electron-packager . \"Good Time\" --platform=win32 --arch=x64 --out=dist --overwrite --asar=false --icon=assets/icon.ico --ignore=\"^/dist($|/)\" --ignore=\"^/openclaw-workspace($|/)\""
   },
   "devDependencies": {
     "@electron/packager": "^20.0.0",

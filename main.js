@@ -2,7 +2,7 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { app, BrowserWindow, Menu, nativeTheme, shell, ipcMain, screen } = require("electron");
 
-app.setName("好时光");
+app.setName("Good Time");
 app.setPath("userData", path.join(app.getPath("appData"), "focus-widget"));
 
 let mainWindow;
@@ -54,7 +54,7 @@ function createMainWindow() {
     y: bounds.y,
     minWidth: 360,
     minHeight: 560,
-    title: "好时光",
+    title: "Good Time（好时光）",
     backgroundColor: nativeTheme.shouldUseDarkColors ? "#18201d" : "#eef2f1",
     show: false,
     skipTaskbar: true,
@@ -98,7 +98,7 @@ function createQuickWindow() {
     y: bounds.y,
     minWidth: 360,
     minHeight: 430,
-    title: "好时光",
+    title: "Good Time（好时光）",
     backgroundColor: nativeTheme.shouldUseDarkColors ? "#18201d" : "#eef2f1",
     show: false,
     skipTaskbar: true,

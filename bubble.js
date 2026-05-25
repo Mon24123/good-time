@@ -322,7 +322,7 @@ openFullFromBubble.addEventListener("click", (event) => {
 
 quitFromBubble.addEventListener("click", (event) => {
   event.stopPropagation();
-  const shouldQuit = window.confirm("确定要退出好时光吗？退出后需要重新打开应用才能继续记录。");
+  const shouldQuit = window.confirm("确定要退出 Good Time 吗？退出后需要重新打开应用才能继续记录。");
   if (shouldQuit && window.focusWidget?.quitApp) {
     window.focusWidget.quitApp();
   }

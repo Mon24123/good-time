@@ -387,13 +387,13 @@ function saveState() {
 
 function getBackupFileName() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
-  return `haoshiguang-backup-${stamp}.json`;
+  return `good-time-backup-${stamp}.json`;
 }
 
 function exportDataBackup() {
   saveState();
   const payload = {
-    app: "好时光",
+    app: "Good Time（好时光）",
     appVersion: APP_VERSION,
     exportedAt: new Date().toISOString(),
     storageKey: STORAGE_KEY,
@@ -1381,7 +1381,7 @@ function buildReport() {
         .join("\n")
     : "今天还没有时间记录";
 
-  return `好时光日报｜${date}
+  return `Good Time 日报｜${date}
 
 今日已记录：${formatDuration(totalMs)}
 完成任务：${doneTasks}/${day.tasks.length}
@@ -1983,7 +1983,7 @@ function csvCell(value) {
 function getCategoryCsvFileName(periodLabel) {
   const range = getPeriodRangeText(periodLabel).replace(/\s+至\s+/g, "_to_").replace(/[^\d_to-]/g, "");
   const periodName = periodLabel === "日" ? "day" : periodLabel === "周" ? "week" : "month";
-  return `haoshiguang-${periodName}-${range || selectedDateKey}.csv`;
+  return `good-time-${periodName}-${range || selectedDateKey}.csv`;
 }
 
 function downloadCategoryDetailCsv(periodLabel = selectedCategoryDetailPeriod || "日") {

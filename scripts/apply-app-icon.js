@@ -9,8 +9,8 @@ if (platform === "mac") {
   const target = path.join(
     root,
     "dist",
-    "好时光-darwin-arm64",
-    "好时光.app",
+    "Good Time-darwin-arm64",
+    "Good Time.app",
     "Contents",
     "Resources",
     "electron.icns"
