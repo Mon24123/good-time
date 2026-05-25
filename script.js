@@ -896,7 +896,7 @@ function addDailyTask() {
   elements.dailyTaskTime.value = "";
   elements.dailyTaskMinutes.value = "";
   saveState();
-  render();
+  render({ forceDailyTasksSync: true });
   showToast(existing ? "已更新固定任务" : "已添加固定任务");
 }
 
@@ -910,7 +910,7 @@ function removeDailyTask(id) {
   lastDailyTasksMarkup = "";
   refreshFutureDailyTasks();
   saveState();
-  render();
+  render({ forceDailyTasksSync: true });
   showToast(`已删除每日任务：${task.title}`);
 }
 
@@ -2220,6 +2220,7 @@ function escapeHtml(value) {
 
 function render(options = {}) {
   const forceActiveSync = Boolean(options.forceActiveSync);
+  const forceDailyTasksSync = Boolean(options.forceDailyTasksSync || forceActiveSync);
   applyTheme();
   const day = getToday();
   const active = day.active;
@@ -2264,7 +2265,7 @@ function render(options = {}) {
   const isTaskListBusy = elements.taskList.contains(activeElement);
   const isRecordListBusy = elements.recordList.matches(":hover") || elements.recordList.contains(activeElement);
 
-  if (editingCategoryTarget?.kind !== "daily" && !isDailyPanelBusy) {
+  if (editingCategoryTarget?.kind !== "daily" && (forceDailyTasksSync || !isDailyPanelBusy)) {
     renderDailyTasksPanel();
   }
   if (!editingTodoDateId && editingCategoryTarget?.kind !== "todo" && (forceActiveSync || !isTodoPoolBusy)) {
