@@ -672,8 +672,43 @@ function getActiveElapsed(active) {
     return 0;
   }
 
+  if (Array.isArray(active.segments)) {
+    return active.segments.reduce((total, segment) => {
+      const start = Number(segment.startedAt);
+      const end = segment.endedAt ? Number(segment.endedAt) : active.status === "running" ? Date.now() : start;
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+        return total;
+      }
+      return total + end - start;
+    }, 0);
+  }
+
   const runningMs = active.status === "running" ? Date.now() - active.lastStartedAt : 0;
   return active.elapsedMs + runningMs;
+}
+
+function getActiveSegments(active, endedAt = Date.now()) {
+  if (!active) {
+    return [];
+  }
+
+  if (Array.isArray(active.segments) && active.segments.length) {
+    return active.segments
+      .map((segment) => {
+        const startedAt = Number(segment.startedAt);
+        const segmentEndedAt = segment.endedAt ? Number(segment.endedAt) : endedAt;
+        return {
+          startedAt,
+          endedAt: segmentEndedAt
+        };
+      })
+      .filter((segment) => Number.isFinite(segment.startedAt) && Number.isFinite(segment.endedAt) && segment.endedAt > segment.startedAt);
+  }
+
+  const durationMs = getActiveElapsed(active);
+  return durationMs >= 1000
+    ? [{ startedAt: endedAt - durationMs, endedAt }]
+    : [];
 }
 
 function showToast(message) {
@@ -714,15 +749,17 @@ function startActivity(title, category, taskId = null, sourceTodoId = null) {
   }
 
   const linkedTaskId = ensureTaskForActivity(day, name, normalizedCategory, taskId);
+  const startedAt = Date.now();
   day.active = {
     id: uid(),
     taskId: linkedTaskId,
     title: name,
     category: normalizedCategory,
-    startedAt: Date.now(),
-    lastStartedAt: Date.now(),
+    startedAt,
+    lastStartedAt: startedAt,
     elapsedMs: 0,
     status: "running",
+    segments: [{ startedAt, endedAt: null }],
     sourceTodoId
   };
 
@@ -773,11 +810,22 @@ function togglePause() {
   }
 
   if (active.status === "running") {
+    const pausedAt = Date.now();
+    const currentSegment = Array.isArray(active.segments)
+      ? [...active.segments].reverse().find((segment) => !segment.endedAt)
+      : null;
+    if (currentSegment) {
+      currentSegment.endedAt = pausedAt;
+    }
     active.elapsedMs = getActiveElapsed(active);
     active.status = "paused";
   } else {
+    const resumedAt = Date.now();
     active.status = "running";
-    active.lastStartedAt = Date.now();
+    active.lastStartedAt = resumedAt;
+    if (Array.isArray(active.segments)) {
+      active.segments.push({ startedAt: resumedAt, endedAt: null });
+    }
   }
 
   saveState();
@@ -796,18 +844,24 @@ function recordActiveActivity({ completeTask }) {
     return;
   }
 
-  const durationMs = getActiveElapsed(active);
-  if (durationMs >= 1000) {
-    day.records.unshift({
-      id: active.id,
+  const endedAt = Date.now();
+  const note = elements.finishNote.value.trim();
+  const segments = getActiveSegments(active, endedAt);
+  const records = segments
+    .map((segment, index) => ({
+      id: index === 0 ? active.id : uid(),
       taskId: active.taskId || null,
       title: active.title,
       category: active.category || "其他",
-      startedAt: active.startedAt,
-      endedAt: Date.now(),
-      durationMs,
-      note: elements.finishNote.value.trim()
-    });
+      startedAt: segment.startedAt,
+      endedAt: segment.endedAt,
+      durationMs: segment.endedAt - segment.startedAt,
+      note: index === segments.length - 1 ? note : ""
+    }))
+    .filter((record) => record.durationMs >= 1000);
+
+  if (records.length) {
+    day.records.unshift(...records.reverse());
   }
 
   if (completeTask) {
