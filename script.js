@@ -105,6 +105,7 @@ let selectedCategoryDetailPeriod = null;
 let editingCategoryTarget = null;
 let editingTaskId = null;
 let editingRecordGroupKey = null;
+let editingTodoTitleId = null;
 let editingTodoDateId = null;
 let isDailyTasksPanelOpen = false;
 let lastCategoryOptionsMarkup = "";
@@ -1151,6 +1152,24 @@ function changeTodoCategory(todoId, category) {
   renderCategoryOptions();
 }
 
+function updateTodoTitle(todoId, value) {
+  const todo = getTodos().find((item) => item.id === todoId);
+  if (!todo) {
+    return;
+  }
+
+  const nextTitle = value.trim();
+  if (!nextTitle) {
+    showToast("待办名称不能为空");
+    return;
+  }
+
+  todo.title = nextTitle;
+  editingTodoTitleId = null;
+  saveState();
+  renderTodoPool();
+}
+
 function updateTodoDueDate(todoId) {
   const todo = getTodos().find((item) => item.id === todoId);
   if (!todo) {
@@ -1562,10 +1581,13 @@ function renderTodoPool() {
 
   elements.todoPoolList.innerHTML = todos.map((todo) => {
     const activeTodo = isTodoActive(todo);
+    const titleControl = editingTodoTitleId === todo.id
+      ? `<input class="todo-title-input" type="text" value="${escapeHtml(todo.title)}" data-todo-title-input="${escapeHtml(todo.id)}" aria-label="修改待办名称" />`
+      : `<button class="todo-pool-title" type="button" data-todo-edit="${escapeHtml(todo.id)}">${escapeHtml(todo.title)}${activeTodo ? `<span class="active-task-badge">进行中</span>` : ""}</button>`;
     return `
     <li class="todo-pool-item ${todo.done ? "done" : ""} ${activeTodo ? "active-todo" : ""}">
       <input type="checkbox" ${todo.done ? "checked" : ""} data-todo-check="${escapeHtml(todo.id)}" aria-label="切换待办状态" />
-      <span class="todo-pool-title">${escapeHtml(todo.title)}${activeTodo ? `<span class="active-task-badge">进行中</span>` : ""}</span>
+      ${titleControl}
       ${renderCategoryEditor(todo.category || "其他", "todo", todo.id)}
       ${editingTodoDateId === todo.id
     ? `<span class="todo-date-editor"><input type="text" value="${escapeHtml(todo.dueDate || "")}" data-todo-date-input="${escapeHtml(todo.id)}" placeholder="2026-05-22" /><button type="button" data-todo-date-save="${escapeHtml(todo.id)}">保存</button></span>`
@@ -2334,7 +2356,7 @@ function render(options = {}) {
   if (editingCategoryTarget?.kind !== "daily" && (forceDailyTasksSync || !isDailyPanelBusy)) {
     renderDailyTasksPanel();
   }
-  if (!editingTodoDateId && editingCategoryTarget?.kind !== "todo" && (forceActiveSync || !isTodoPoolBusy)) {
+  if (!editingTodoTitleId && !editingTodoDateId && editingCategoryTarget?.kind !== "todo" && (forceActiveSync || !isTodoPoolBusy)) {
     renderTodoPool();
   }
   if (!editingTaskId && editingCategoryTarget?.kind !== "task" && (forceActiveSync || !isTaskListBusy)) {
@@ -2424,6 +2446,18 @@ elements.todoPoolList.addEventListener("click", (event) => {
     return;
   }
 
+  const editId = event.target.closest("[data-todo-edit]")?.dataset.todoEdit;
+  if (editId) {
+    editingTodoTitleId = editId;
+    renderTodoPool();
+    requestAnimationFrame(() => {
+      const input = elements.todoPoolList.querySelector(`[data-todo-title-input="${CSS.escape(editId)}"]`);
+      input?.focus();
+      input?.select();
+    });
+    return;
+  }
+
   const startButton = event.target.closest("[data-todo-start]");
   const startId = startButton?.dataset.todoStart;
   if (startId) {
@@ -2465,7 +2499,28 @@ elements.todoPoolList.addEventListener("click", (event) => {
   }
 });
 
+elements.todoPoolList.addEventListener("focusout", (event) => {
+  const input = event.target.closest("[data-todo-title-input]");
+  if (input) {
+    updateTodoTitle(input.dataset.todoTitleInput, input.value);
+  }
+});
+
 elements.todoPoolList.addEventListener("keydown", (event) => {
+  const titleInput = event.target.closest("[data-todo-title-input]");
+  if (titleInput) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      titleInput.blur();
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      editingTodoTitleId = null;
+      renderTodoPool();
+    }
+    return;
+  }
+
   const input = event.target.closest("[data-todo-date-input]");
   if (!input) {
     return;

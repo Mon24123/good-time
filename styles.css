@@ -538,8 +538,27 @@ body.has-active-task .active-progress span {
 }
 
 .todo-pool-title {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
   font-weight: 760;
   overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.todo-pool-title:hover {
+  color: var(--accent-dark);
+}
+
+.todo-title-input {
+  min-height: 34px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-weight: 760;
+  line-height: 1.45;
 }
 
 .todo-start-date {
