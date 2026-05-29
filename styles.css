@@ -491,8 +491,27 @@ body.has-active-task .active-progress span {
 
 .daily-task-title {
   min-width: 0;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
   font-weight: 760;
   overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.daily-task-title:hover {
+  color: var(--accent-dark);
+}
+
+.daily-task-title-input {
+  min-height: 34px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-weight: 760;
+  line-height: 1.45;
 }
 
 .daily-task-meta,

@@ -107,6 +107,7 @@ let editingTaskId = null;
 let editingRecordGroupKey = null;
 let editingTodoTitleId = null;
 let editingTodoDateId = null;
+let editingDailyTaskTitleId = null;
 let isDailyTasksPanelOpen = false;
 let lastCategoryOptionsMarkup = "";
 let lastDailyTasksMarkup = "";
@@ -981,6 +982,27 @@ function removeDailyTask(id) {
   showToast(`已删除每日任务：${task.title}`);
 }
 
+function updateDailyTaskTitle(id, value) {
+  const task = getDailyTasks().find((item) => item.id === id);
+  if (!task) {
+    return;
+  }
+
+  const nextTitle = value.trim();
+  if (!nextTitle) {
+    showToast("固定任务名称不能为空");
+    return;
+  }
+
+  task.title = nextTitle;
+  editingDailyTaskTitleId = null;
+  lastDailyTasksMarkup = "";
+  refreshFutureDailyTasks();
+  saveState();
+  render({ forceDailyTasksSync: true });
+  showToast("已更新固定任务名称");
+}
+
 function changeDailyTaskCategory(id, category) {
   const task = getDailyTasks().find((item) => item.id === id);
   if (!task) {
@@ -1810,9 +1832,12 @@ function renderDailyTasksPanel() {
         task.time || "",
         task.estimateMinutes ? `预计 ${task.estimateMinutes} 分钟` : ""
       ].filter(Boolean).join(" · ");
+      const titleControl = editingDailyTaskTitleId === task.id
+        ? `<input class="daily-task-title-input" type="text" value="${escapeHtml(task.title)}" data-daily-task-title-input="${escapeHtml(task.id)}" aria-label="修改固定任务名称" />`
+        : `<button class="daily-task-title" type="button" data-daily-task-edit="${escapeHtml(task.id)}">${escapeHtml(task.title)}</button>`;
       return `
         <li class="daily-task-item">
-          <span class="daily-task-title">${escapeHtml(task.title)}</span>
+          ${titleControl}
           ${renderCategoryEditor(task.category || "其他", "daily", task.id)}
           <span class="daily-task-meta">${meta ? escapeHtml(meta) : "无固定时间"}</span>
           <button class="icon-button" type="button" data-daily-task-remove="${escapeHtml(task.id)}" aria-label="删除固定任务">×</button>
@@ -2551,6 +2576,19 @@ elements.toggleDailyTasksButton.addEventListener("click", () => {
   render();
 });
 elements.dailyTasksList.addEventListener("click", (event) => {
+  const editId = event.target.closest("[data-daily-task-edit]")?.dataset.dailyTaskEdit;
+  if (editId) {
+    editingDailyTaskTitleId = editId;
+    lastDailyTasksMarkup = "";
+    renderDailyTasksPanel();
+    requestAnimationFrame(() => {
+      const input = elements.dailyTasksList.querySelector(`[data-daily-task-title-input="${CSS.escape(editId)}"]`);
+      input?.focus();
+      input?.select();
+    });
+    return;
+  }
+
   const removeButton = event.target.closest("[data-daily-task-remove]");
   if (!removeButton) {
     return;
@@ -2567,6 +2605,31 @@ elements.dailyTasksList.addEventListener("click", (event) => {
 
   removeButton.closest(".daily-task-item")?.remove();
   removeDailyTask(removeId);
+});
+
+elements.dailyTasksList.addEventListener("focusout", (event) => {
+  const input = event.target.closest("[data-daily-task-title-input]");
+  if (input) {
+    updateDailyTaskTitle(input.dataset.dailyTaskTitleInput, input.value);
+  }
+});
+
+elements.dailyTasksList.addEventListener("keydown", (event) => {
+  const input = event.target.closest("[data-daily-task-title-input]");
+  if (!input) {
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    input.blur();
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    editingDailyTaskTitleId = null;
+    lastDailyTasksMarkup = "";
+    renderDailyTasksPanel();
+  }
 });
 elements.themeColorInput.addEventListener("input", (event) => {
   setThemeColor(event.target.value);

@@ -302,64 +302,81 @@ function sendToController(channel, payload) {
   }
 }
 
-app.whenReady().then(() => {
-  Menu.setApplicationMenu(null);
-  app.setLoginItemSettings({
-    openAtLogin: true,
-    openAsHidden: false
-  });
-  createMainWindow();
-  createQuickWindow();
-  createBubbleWindow();
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
-  ipcMain.on("toggle-main-window", toggleMainWindow);
-  ipcMain.on("toggle-quick-window", toggleQuickWindow);
-  ipcMain.on("open-main-window", openMainWindow);
-  ipcMain.on("hide-panels", hidePanels);
-  ipcMain.on("hide-bubble", hideBubble);
-  ipcMain.on("set-bubble-docked", (_event, docked) => {
-    setBubbleDocked(docked);
-  });
-  ipcMain.on("quit-app", quitApp);
-  ipcMain.on("move-bubble-by", (_event, delta) => {
-    if (!isLiveWindow(bubbleWindow) || !Number.isFinite(delta?.x) || !Number.isFinite(delta?.y)) {
-      return;
-    }
-
-    const bounds = bubbleWindow.getBounds();
-    bubbleWindow.setPosition(Math.round(bounds.x + delta.x), Math.round(bounds.y + delta.y), false);
-  });
-  ipcMain.on("set-bubble-expanded", (_event, expanded) => {
-    setBubbleExpanded(expanded);
-  });
-  ipcMain.on("start-task", (_event, taskId) => {
-    sendToController("start-task", taskId);
-  });
-  ipcMain.on("start-activity", (_event, activity) => {
-    sendToController("start-activity", activity);
-  });
-  ipcMain.on("pause-active", () => {
-    sendToController("pause-active");
-  });
-  ipcMain.on("finish-active", () => {
-    sendToController("finish-active");
-  });
-  ipcMain.on("set-active-note", (_event, note) => {
-    sendToController("set-active-note", String(note || ""));
-  });
-  ipcMain.on("timer-status", (_event, status) => {
-    latestTimerStatus = status;
-    resizeBubbleForStatus(status);
-    if (isLiveWindow(bubbleWindow)) {
-      bubbleWindow.webContents.send("timer-status", status);
-    }
-  });
-
-  app.on("activate", () => {
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
     showBubble();
-    toggleQuickWindow();
+    if (isLiveWindow(quickWindow)) {
+      quickWindow.show();
+      quickWindow.focus();
+    }
+    if (isLiveWindow(mainWindow) && mainWindow.isVisible()) {
+      mainWindow.focus();
+    }
   });
-});
+
+  app.whenReady().then(() => {
+    Menu.setApplicationMenu(null);
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      openAsHidden: false
+    });
+    createMainWindow();
+    createQuickWindow();
+    createBubbleWindow();
+
+    ipcMain.on("toggle-main-window", toggleMainWindow);
+    ipcMain.on("toggle-quick-window", toggleQuickWindow);
+    ipcMain.on("open-main-window", openMainWindow);
+    ipcMain.on("hide-panels", hidePanels);
+    ipcMain.on("hide-bubble", hideBubble);
+    ipcMain.on("set-bubble-docked", (_event, docked) => {
+      setBubbleDocked(docked);
+    });
+    ipcMain.on("quit-app", quitApp);
+    ipcMain.on("move-bubble-by", (_event, delta) => {
+      if (!isLiveWindow(bubbleWindow) || !Number.isFinite(delta?.x) || !Number.isFinite(delta?.y)) {
+        return;
+      }
+
+      const bounds = bubbleWindow.getBounds();
+      bubbleWindow.setPosition(Math.round(bounds.x + delta.x), Math.round(bounds.y + delta.y), false);
+    });
+    ipcMain.on("set-bubble-expanded", (_event, expanded) => {
+      setBubbleExpanded(expanded);
+    });
+    ipcMain.on("start-task", (_event, taskId) => {
+      sendToController("start-task", taskId);
+    });
+    ipcMain.on("start-activity", (_event, activity) => {
+      sendToController("start-activity", activity);
+    });
+    ipcMain.on("pause-active", () => {
+      sendToController("pause-active");
+    });
+    ipcMain.on("finish-active", () => {
+      sendToController("finish-active");
+    });
+    ipcMain.on("set-active-note", (_event, note) => {
+      sendToController("set-active-note", String(note || ""));
+    });
+    ipcMain.on("timer-status", (_event, status) => {
+      latestTimerStatus = status;
+      resizeBubbleForStatus(status);
+      if (isLiveWindow(bubbleWindow)) {
+        bubbleWindow.webContents.send("timer-status", status);
+      }
+    });
+
+    app.on("activate", () => {
+      showBubble();
+      toggleQuickWindow();
+    });
+  });
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin" && app.isQuitting) {
